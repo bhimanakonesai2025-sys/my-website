@@ -1,19 +1,20 @@
 const express = require("express");
 const fs = require("fs");
+const path = require("path");
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
 
-// Allow the server to receive JSON data
+// Allow JSON data
 app.use(express.json());
 
-// Serve files from the main project folder
+// Serve website files from the root folder
 app.use(express.static(__dirname));
 
-// Serve the homepage
+// Homepage
 app.get("/", (req, res) => {
-    res.sendFile(__dirname + "/index.html");
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
 // Project data
@@ -42,25 +43,23 @@ app.get("/api/contact", (req, res) => {
 
 // Receive and save messages
 app.post("/api/messages", (req, res) => {
-
     const message = req.body;
-
     let messages = [];
 
-    if (fs.existsSync("messages.json")) {
-        const data = fs.readFileSync("messages.json");
+    if (fs.existsSync(path.join(__dirname, "messages.json"))) {
+        const data = fs.readFileSync(
+            path.join(__dirname, "messages.json"),
+            "utf8"
+        );
         messages = JSON.parse(data);
     }
 
     messages.push(message);
 
     fs.writeFileSync(
-        "messages.json",
+        path.join(__dirname, "messages.json"),
         JSON.stringify(messages, null, 4)
     );
-
-    console.log("New Message Received:");
-    console.log(message);
 
     res.json({
         success: true,
