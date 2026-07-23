@@ -1,15 +1,36 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+const { MongoClient } = require("mongodb");
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
 
+// MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI;
+
+const client = new MongoClient(MONGODB_URI);
+
+let messagesCollection;
+
+// Connect to MongoDB
+async function connectDatabase() {
+    await client.connect();
+
+    const database = client.db("myWebsiteDB");
+
+    messagesCollection = database.collection("messages");
+
+    console.log("Connected to MongoDB");
+}
+
+connectDatabase().catch(console.error);
+
 // Allow JSON data
 app.use(express.json());
 
-// Serve website files from the root folder
+// Serve website files
 app.use(express.static(__dirname));
 
 // Homepage
@@ -41,30 +62,31 @@ app.get("/api/contact", (req, res) => {
     res.json(contact);
 });
 
-// Receive and save messages
-app.post("/api/messages", (req, res) => {
-    const message = req.body;
-    let messages = [];
+// Save messages to MongoDB
+app.post("/api/messages", async (req, res) => {
+    try {
+        const message = {
+            ...req.body,
+            createdAt: new Date()
+        };
 
-    if (fs.existsSync(path.join(__dirname, "messages.json"))) {
-        const data = fs.readFileSync(
-            path.join(__dirname, "messages.json"),
-            "utf8"
-        );
-        messages = JSON.parse(data);
+        await messagesCollection.insertOne(message);
+
+        console.log("New message saved to MongoDB");
+
+        res.json({
+            success: true,
+            message: "Your message was saved successfully!"
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to save message"
+        });
     }
-
-    messages.push(message);
-
-    fs.writeFileSync(
-        path.join(__dirname, "messages.json"),
-        JSON.stringify(messages, null, 4)
-    );
-
-    res.json({
-        success: true,
-        message: "Your message was saved successfully!"
-    });
 });
 
 // Start server
