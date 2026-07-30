@@ -1,36 +1,37 @@
 const express = require("express");
-const fs = require("fs");
 const path = require("path");
 const { MongoClient } = require("mongodb");
 
 const app = express();
-
 const PORT = process.env.PORT || 3000;
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI;
-
 const client = new MongoClient(MONGODB_URI);
 
 let messagesCollection;
+let visitsCollection;
 
 // Connect to MongoDB
 async function connectDatabase() {
-    await client.connect();
+    try {
+        await client.connect();
 
-    const database = client.db("myWebsiteDB");
+        const database = client.db("myWebsiteDB");
 
-    messagesCollection = database.collection("messages");
+        messagesCollection = database.collection("messages");
+        visitsCollection = database.collection("visits");
 
-    console.log("Connected to MongoDB");
+        console.log("MongoDB connection successful!");
+    } catch (error) {
+        console.error("MongoDB connection failed:", error);
+    }
 }
 
 connectDatabase().catch(console.error);
 
-// Allow JSON data
+// Middleware
 app.use(express.json());
-
-// Serve website files
 app.use(express.static(__dirname));
 
 // Homepage
@@ -66,13 +67,13 @@ app.get("/api/contact", (req, res) => {
 app.post("/api/messages", async (req, res) => {
     try {
         const message = {
-            ...req.body,
+            name: req.body.name,
+            email: req.body.email,
+            message: req.body.message,
             createdAt: new Date()
         };
 
         await messagesCollection.insertOne(message);
-
-        console.log("New message saved to MongoDB");
 
         res.json({
             success: true,
@@ -85,6 +86,58 @@ app.post("/api/messages", async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to save message"
+        });
+    }
+});
+
+// Log visitor activity
+app.post("/api/visit", async (req, res) => {
+    try {
+        const visit = {
+            timestamp: new Date(),
+            browser: req.headers["user-agent"],
+            ip: req.ip
+        };
+
+        await visitsCollection.insertOne(visit);
+
+        res.json({
+            success: true,
+            message: "Visitor logged successfully."
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to log visitor."
+        });
+    }
+});
+
+// Visitor statistics
+app.get("/api/visit/stats", async (req, res) => {
+    try {
+        const totalVisits = await visitsCollection.countDocuments();
+
+        const recentVisits = await visitsCollection
+            .find()
+            .sort({ timestamp: -1 })
+            .limit(5)
+            .toArray();
+
+        res.json({
+            totalVisits,
+            recentVisits
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch visitor statistics."
         });
     }
 });
