@@ -1,142 +1,144 @@
+// Record visitor activity
+fetch("/api/visit", {
+    method: "POST"
+})
+.then(response => response.json())
+.then(data => {
+    console.log("Visit recorded:", data);
+})
+.catch(error => {
+    console.log("Error recording visit:", error);
+});
+
+
 // Load projects from the server
-
 fetch("/api/projects")
+.then(response => response.json())
 
-    .then(response => response.json())
+.then(projects => {
 
-    .then(projects => {
+    const projectList =
+        document.getElementById("projectList");
 
-        const projectList =
-            document.getElementById("projectList");
+    projectList.innerHTML = "";
 
-        projectList.innerHTML = "";
+    projects.forEach(project => {
 
-        projects.forEach(project => {
+        const listItem =
+            document.createElement("li");
 
-            const listItem =
-                document.createElement("li");
+        listItem.textContent = project;
 
-            listItem.textContent = project;
-
-            projectList.appendChild(listItem);
-
-        });
-
-    })
-
-    .catch(error => {
-
-        console.log("Error loading projects:", error);
+        projectList.appendChild(listItem);
 
     });
+
+})
+
+.catch(error => {
+
+    console.log("Error loading projects:", error);
+
+});
 
 
 // Load contact information from the server
-
 fetch("/api/contact")
+.then(response => response.json())
 
-    .then(response => response.json())
+.then(contact => {
 
-    .then(contact => {
-
-        document.getElementById("email").textContent =
-            contact.email;
-
-
-        const githubLink =
-            document.getElementById("github");
+    document.getElementById("email").textContent =
+        contact.email;
 
 
-        githubLink.textContent =
-            contact.github;
+    const githubLink =
+        document.getElementById("github");
 
 
-        githubLink.href =
-            contact.github;
+    githubLink.textContent =
+        contact.github;
 
-    })
 
-    .catch(error => {
+    githubLink.href =
+        contact.github;
 
-        console.log("Error loading contact information:", error);
+})
 
-    });
+.catch(error => {
+
+    console.log("Error loading contact information:", error);
+
+});
 
 
 // Handle contact form submission
-
 document.getElementById("contactForm")
-
-    .addEventListener("submit", function(event) {
-
-
-        // Stop the page from refreshing
-
-        event.preventDefault();
+.addEventListener("submit", function(event) {
 
 
-        // Get the values entered in the form
-
-        const name =
-            document.getElementById("name").value;
+    // Stop the page from refreshing
+    event.preventDefault();
 
 
-        const email =
-            document.getElementById("messageEmail").value;
+    const name =
+        document.getElementById("name").value;
 
 
-        const message =
-            document.getElementById("message").value;
+    const email =
+        document.getElementById("messageEmail").value;
 
 
-        // Send the data to the server
+    const message =
+        document.getElementById("message").value;
 
-        fetch("/api/messages", {
 
-            method: "POST",
+    fetch("/api/messages", {
 
-            headers: {
+        method: "POST",
 
-                "Content-Type": "application/json"
+        headers: {
 
-            },
+            "Content-Type": "application/json"
 
-            body: JSON.stringify({
+        },
 
-                name: name,
+        body: JSON.stringify({
 
-                email: email,
+            name: name,
 
-                message: message
+            email: email,
 
-            })
+            message: message
 
         })
 
-
-        .then(response => response.json())
-
-
-        .then(data => {
+    })
 
 
-            document.getElementById("formMessage")
-
-                .textContent = data.message;
+    .then(response => response.json())
 
 
-            document.getElementById("contactForm")
-
-                .reset();
+    .then(data => {
 
 
-        })
+        document.getElementById("formMessage")
+
+            .textContent = data.message;
 
 
-        .catch(error => {
+        document.getElementById("contactForm")
 
-            console.log("Error:", error);
+            .reset();
 
-        });
+
+    })
+
+
+    .catch(error => {
+
+        console.log("Error:", error);
 
     });
+
+});
