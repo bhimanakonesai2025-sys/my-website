@@ -7,6 +7,12 @@ const PORT = process.env.PORT || 3000;
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+    console.error("MONGODB_URI is missing!");
+    process.exit(1);
+}
+
 const client = new MongoClient(MONGODB_URI);
 
 let messagesCollection;
@@ -23,12 +29,13 @@ async function connectDatabase() {
         visitsCollection = database.collection("visits");
 
         console.log("MongoDB connection successful!");
+
     } catch (error) {
         console.error("MongoDB connection failed:", error);
     }
 }
 
-connectDatabase().catch(console.error);
+connectDatabase();
 
 // Middleware
 app.use(express.json());
@@ -39,6 +46,7 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
+
 // Project data
 const projects = [
     "Personal Portfolio Website hosted using GitHub Pages.",
@@ -47,25 +55,31 @@ const projects = [
     "Linux Command Practice."
 ];
 
+
 // Contact data
 const contact = {
     email: "bhimanakone.sai2025@vitstudent.ac.in",
     github: "https://github.com/bhimanakonesai2025-sys"
 };
 
+
 // Get projects
 app.get("/api/projects", (req, res) => {
     res.json(projects);
 });
+
 
 // Get contact information
 app.get("/api/contact", (req, res) => {
     res.json(contact);
 });
 
+
 // Save messages to MongoDB
 app.post("/api/messages", async (req, res) => {
+
     try {
+
         const message = {
             name: req.body.name,
             email: req.body.email,
@@ -81,6 +95,7 @@ app.post("/api/messages", async (req, res) => {
         });
 
     } catch (error) {
+
         console.error(error);
 
         res.status(500).json({
@@ -90,9 +105,12 @@ app.post("/api/messages", async (req, res) => {
     }
 });
 
+
 // Log visitor activity
 app.post("/api/visit", async (req, res) => {
+
     try {
+
         const visit = {
             timestamp: new Date(),
             browser: req.headers["user-agent"],
@@ -107,6 +125,7 @@ app.post("/api/visit", async (req, res) => {
         });
 
     } catch (error) {
+
         console.error(error);
 
         res.status(500).json({
@@ -116,9 +135,12 @@ app.post("/api/visit", async (req, res) => {
     }
 });
 
+
 // Visitor statistics
 app.get("/api/visit/stats", async (req, res) => {
+
     try {
+
         const totalVisits = await visitsCollection.countDocuments();
 
         const recentVisits = await visitsCollection
@@ -127,12 +149,14 @@ app.get("/api/visit/stats", async (req, res) => {
             .limit(5)
             .toArray();
 
+
         res.json({
             totalVisits,
             recentVisits
         });
 
     } catch (error) {
+
         console.error(error);
 
         res.status(500).json({
@@ -141,6 +165,7 @@ app.get("/api/visit/stats", async (req, res) => {
         });
     }
 });
+
 
 // Start server
 app.listen(PORT, "0.0.0.0", () => {
